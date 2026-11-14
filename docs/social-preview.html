@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Anteprima social</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=JetBrains+Mono:wght@500&display=block" rel="stylesheet">
+<style>
+  :root {
+    --sun:      oklch(0.88 0.165 96);   /* giallo segnale: la superficie */
+    --sun-deep: oklch(0.80 0.165 88);
+    --ink:      oklch(0.20 0.02 85);    /* quasi nero, scaldato verso il giallo */
+    --ink-soft: oklch(0.34 0.03 85);
+    --paper:    oklch(0.985 0.01 95);
+    --line:     oklch(0.86 0.02 90);
+    --mute:     oklch(0.62 0.02 90);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1280px; height: 640px; overflow: hidden; }
+  body {
+    background: var(--sun);
+    color: var(--ink);
+    font-family: "Bricolage Grotesque", system-ui, sans-serif;
+    position: relative;
+  }
+
+  /* ---- testo, colonna sinistra ---- */
+  .copy { position: absolute; left: 80px; top: 74px; width: 600px; }
+  h1 {
+    font-variation-settings: "opsz" 96;
+    font-weight: 800;
+    font-size: 92px;
+    line-height: 0.94;
+    letter-spacing: -0.035em;
+  }
+  h1 .soft { font-weight: 400; letter-spacing: -0.03em; }
+  .lede {
+    margin-top: 30px;
+    font-size: 27px;
+    line-height: 1.32;
+    font-weight: 400;
+    color: var(--ink-soft);
+    max-width: 30ch;
+  }
+  .cmd {
+    position: absolute; left: 80px; bottom: 74px;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 21px;
+    background: var(--ink);
+    color: var(--sun);
+    padding: 13px 20px 13px 18px;
+    border-radius: 10px;
+  }
+  .cmd .ps { opacity: 0.55; margin-right: 0.6ch; }
+  .repo {
+    position: absolute; left: 80px; bottom: 34px;
+    font-size: 17px; font-weight: 600; letter-spacing: 0.01em;
+    color: var(--ink-soft);
+  }
+
+  /* ---- due finestre, colonna destra ---- */
+  .win {
+    position: absolute;
+    width: 430px; height: 300px;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 3px solid var(--ink);
+  }
+  .win .bar {
+    height: 46px; display: flex; align-items: center;
+    padding: 0 0 0 18px; font-size: 18px; font-weight: 600;
+  }
+  .win .bar .title { flex: 1; }
+  .win .ctl { display: flex; height: 100%; }
+  .win .ctl span { width: 46px; display: grid; place-items: center; }
+  .win .ctl svg { width: 12px; height: 12px; stroke: currentColor; stroke-width: 1.6; fill: none; }
+  .win .body { padding: 26px 26px 0; }
+  .who { display: flex; align-items: center; gap: 14px; }
+  .avatar {
+    width: 50px; height: 50px; border-radius: 50%;
+    display: grid; place-items: center;
+    font-weight: 800; font-size: 24px;
+  }
+  .who b { display: block; font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
+  .who small { font-size: 16px; }
+  .rows { margin-top: 26px; display: grid; gap: 13px; }
+  .rows i { display: block; height: 12px; border-radius: 6px; }
+
+  /* profilo scuro, dietro */
+  .w1 { left: 694px; top: 74px; height: 270px; background: var(--ink); color: var(--paper); }
+  .w1 .bar { border-bottom: 1px solid oklch(0.32 0.02 85); }
+  .w1 .avatar { background: var(--sun); color: var(--ink); }
+  .w1 .who small { color: oklch(0.72 0.03 90); }
+  .w1 .rows i { background: oklch(0.32 0.02 85); }
+
+  /* profilo chiaro, davanti */
+  .w2 {
+    left: 764px; top: 262px; height: 262px; background: var(--paper); color: var(--ink);
+    box-shadow: 12px 12px 0 var(--ink);
+  }
+  .w2 .bar { border-bottom: 1px solid var(--line); }
+  .w2 .avatar { background: var(--ink); color: var(--sun); }
+  .w2 .who small { color: var(--mute); }
+  .w2 .rows i { background: oklch(0.93 0.015 92); }
+
+  .tag {
+    margin-left: auto; font-size: 14px; font-weight: 800; letter-spacing: 0.04em;
+    padding: 5px 10px; border-radius: 999px;
+  }
+  .w1 .tag { background: var(--sun); color: var(--ink); }
+  .w2 .tag { background: var(--ink); color: var(--sun); }
+</style>
+</head>
+<body>
+  <div class="copy">
+    <h1>Due account Claude.<br><span class="soft">Aperti insieme.</span></h1>
+    <p class="lede">Profili isolati di Claude Desktop su Windows, ognuno con il suo accesso e il suo abbonamento.</p>
+  </div>
+
+  <div class="cmd"><span class="ps">PS&gt;</span>.\ClaudeProfile.ps1 add lavoro</div>
+  <div class="repo">github.com/ostile17/claude-multiprofilo-windows</div>
+
+  <div class="win w1" aria-hidden="true">
+    <div class="bar"><span class="title">Claude (personale)</span>
+      <div class="ctl">
+        <span><svg viewBox="0 0 12 12"><path d="M1 6h10"/></svg></span>
+        <span><svg viewBox="0 0 12 12"><rect x="1.5" y="1.5" width="9" height="9"/></svg></span>
+        <span><svg viewBox="0 0 12 12"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9"/></svg></span>
+      </div>
+    </div>
+    <div class="body">
+      <div class="who"><div class="avatar">P</div><div><b>Account personale</b><small>Piano Max</small></div><span class="tag">ATTIVO</span></div>
+      <div class="rows"><i style="width:86%"></i><i style="width:64%"></i></div>
+    </div>
+  </div>
+
+  <div class="win w2" aria-hidden="true">
+    <div class="bar"><span class="title">Claude (lavoro)</span>
+      <div class="ctl">
+        <span><svg viewBox="0 0 12 12"><path d="M1 6h10"/></svg></span>
+        <span><svg viewBox="0 0 12 12"><rect x="1.5" y="1.5" width="9" height="9"/></svg></span>
+        <span><svg viewBox="0 0 12 12"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9"/></svg></span>
+      </div>
+    </div>
+    <div class="body">
+      <div class="who"><div class="avatar">L</div><div><b>Account di lavoro</b><small>Piano Pro</small></div><span class="tag">ATTIVO</span></div>
+      <div class="rows"><i style="width:78%"></i><i style="width:92%"></i><i style="width:55%"></i></div>
+    </div>
+  </div>
+</body>
+</html>
