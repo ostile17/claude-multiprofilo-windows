@@ -5,7 +5,7 @@
 - Claude Desktop dal Microsoft Store (MSIX), versioni 5.1231.2 e 5.11492.0: l'app si è aggiornata durante i test.
 - PowerShell 7.7 e Windows PowerShell 5.1.
 
-**Data:** novembre 2026, versioni dello strumento 0.1.0 e 0.2.0.
+**Data:** novembre 2026, versioni dello strumento 0.1.0, 0.2.0 e 0.3.0.
 
 ---
 
@@ -28,6 +28,7 @@ Prove su un'installazione reale, con il Claude principale e un profilo aggiuntiv
 | D9b | Accesso alla scheda Code dopo il passaggio a Pro | ⚠️ Nuovo accesso | Il server ha rifiutato l'accesso iniziale come troppo vecchio (`session_stale_relogin`) e le sessioni Code non partivano finché non è stato rifatto. Il link `claude://` è arrivato ancora al principale, che è rimasto sul suo account |
 | D10 | Claude in Chrome con più istanze | ⚠️ Solo un account | Ogni istanza, all'avvio, riscrive lo stesso host dell'estensione (`HKCU\...\NativeMessagingHosts\com.anthropic.claude_browser_extension`) e c'è un solo canale locale (`\\.\pipe\claude-mcp-browser-bridge-<utente>`). Con l'estensione entrata con l'account del principale: il principale vede il browser anche dopo l'avvio del profilo; il profilo risponde "nessun browser collegato". Nessuna interferenza |
 | D11 | Cowork (attività locali dalla chat) con più istanze | ✅ | Da settembre 2026 Cowork è integrato nella chat: nessun pulsante dedicato, né nel principale né nel profilo. Due chat avviate a circa 30 secondi di distanza, una per istanza, hanno creato ciascuna il proprio file in `D:\prova-cowork`. Ogni istanza ha salvato la sessione nella propria cartella `local-agent-mode-sessions\<account>` senza riferimenti all'altra. Servizio `CoworkVMService` unico e sempre attivo. Al primo uso il profilo ha scaricato la propria macchina virtuale: circa 9 GB in `vm_bundles` e 350 MB in `claude-code-vm`, come il principale |
+| D14 | Configurazione in `<profilo>\claude-code` (0.1 e 0.2) | ❌ Bug, corretto nella 0.3.0 | All'avvio l'app registra `[CCD] Removing old version: plugins / projects / skills` e cancella tutte le cartelle che non sono una versione di Claude Code, cioè memorie, collegamenti delle skill e plugin del profilo. Restano solo i file singoli (`CLAUDE.md`, `settings.json`, `.claude.json`). Le sorgenti dei collegamenti non vengono toccate. Dalla 0.3.0 la configurazione sta in `claude-config`: dopo l'avvio memorie, skill e plugin restano tutti, e nel log non ci sono più cancellazioni |
 | D13 | Riavvio deciso dall'app (per esempio dopo lo scarico della macchina virtuale) | ✅ | Il profilo si è riavviato da solo con `--user-data-dir` e `--restarted-by-app`; `CLAUDE_CONFIG_DIR` era ancora presente nel nuovo processo |
 | D12 | Aggiornamento di Claude con un profilo aperto | ⚠️ Limite | L'aggiornamento MSIX chiude tutte le istanze ("Windows session ending (close-app)") e riapre solo il principale. Il profilo resta chiuso finché non lo riapri |
 
@@ -38,11 +39,12 @@ La suite lavora in una cartella temporanea, con un percorso che contiene spazi e
 | Area | Casi | PS 7.7 | PS 5.1 |
 |---|---|---|---|
 | Validazione nomi | maiuscole, `../x`, spazi, `claude`, `claude-x`, `con`, `-x`, 41 caratteri | ✅ | ✅ |
-| `add` | marcatore, cartella `claude-code`, avviatore UTF-16 con BOM, icona, 2 collegamenti con destinazione, argomenti e icona corretti, istruzioni di accesso | ✅ | ✅ |
+| `add` | marcatore, cartella `claude-config`, avviatore UTF-16 con BOM, icona, 2 collegamenti con destinazione, argomenti e icona corretti, istruzioni di accesso | ✅ | ✅ |
 | `add` duplicato | rifiutato | ✅ | ✅ |
 | `list` | stato chiuso/aperto, scheda Code, gestito | ✅ | ✅ |
 | `repair` | cambio nome visualizzato (vecchi collegamenti rimossi), `createdAt` conservato, adozione di una cartella creata a mano, opzioni conservate | ✅ | ✅ |
 | `-SharedClaudeCode`, `-StartWithWindows`, `-NoDesktopShortcut` | file flag, collegamenti giusti | ✅ | ✅ |
+| Spostamento da `claude-code` a `claude-config` (0.3.0) | file e cartelle di configurazione spostati; cartelle versione dell'app (`2.1.325`) lasciate in `claude-code`; avviatore aggiornato; rifiuto se il profilo è aperto | ✅ | ✅ |
 | `claudeMdExcludes` (0.2.0) | `settings.json` creato senza BOM con il CLAUDE.md principale; altre impostazioni ed esclusioni esistenti conservate; nessun duplicato dopo più `repair`; JSON illeggibile lasciato intatto con avviso; niente con `-SharedClaudeCode` | ✅ | ✅ |
 | `remove` | collegamenti rimossi e dati conservati; `-DeleteData` cancella; rifiuta cartelle senza marcatore e le lascia intatte | ✅ | ✅ |
 | Avvio reale (`-Launch`) | Claude avviato con la cartella giusta, `list` lo vede aperto, `remove` rifiutato mentre è aperto, chiusura dei soli processi di test | ✅ | — |
@@ -53,6 +55,7 @@ Durante tutti i test, il Claude principale e il profilo reale sono rimasti apert
 
 | Bug | Correzione |
 |---|---|
+| La configurazione Claude Code del profilo stava in `<profilo>\claude-code`, la cartella delle versioni dell'app, che la svuotava a ogni avvio (D14) | Dalla 0.3.0 sta in `claude-config`; `repair` sposta i profili esistenti |
 | L'icona del collegamento puntava alla cartella versionata di Claude in `WindowsApps` e si rompeva all'aggiornamento | L'icona viene copiata nella cartella dei profili |
 | La scheda Code di un profilo usava `~/.claude` dell'account principale | L'avviatore imposta `CLAUDE_CONFIG_DIR` per profilo |
 | Con il Desktop reindirizzato su OneDrive, `%USERPROFILE%\Desktop` non esiste | Percorsi ricavati con `[Environment]::GetFolderPath()` |

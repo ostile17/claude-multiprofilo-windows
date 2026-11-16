@@ -18,7 +18,8 @@ Claude Desktop tiene tutto (accesso, chat, impostazioni, connettori) in una cart
 ├── claude.ico              icona copiata dall'app
 ├── lavoro\                 cartella dati del profilo "lavoro"
 │   ├── profilo.json        marcatore: lo script tocca solo cartelle che lo contengono
-│   └── claude-code\        configurazione di Claude Code per la scheda Code del profilo
+│   ├── claude-config\      configurazione di Claude Code per la scheda Code del profilo
+│   └── claude-code\        versioni di Claude Code scaricate dall'app (gestita dall'app, non toccare)
 └── cliente-rossi\
 ```
 
@@ -103,7 +104,9 @@ Nomi dei profili: lettere minuscole, cifre e trattini, fino a 40 caratteri.
 
 ## Scheda Code
 
-`--user-data-dir` separa solo i dati di Claude Desktop. Le sessioni della scheda **Code** leggerebbero comunque la configurazione principale di Claude Code (`~/.claude`: CLAUDE.md, impostazioni, skill, memoria). Per evitarlo, l'avviatore imposta `CLAUDE_CONFIG_DIR` sulla cartella `claude-code` del profilo.
+`--user-data-dir` separa solo i dati di Claude Desktop. Le sessioni della scheda **Code** leggerebbero comunque la configurazione principale di Claude Code (`~/.claude`: CLAUDE.md, impostazioni, skill, memoria). Per evitarlo, l'avviatore imposta `CLAUDE_CONFIG_DIR` sulla cartella `claude-config` del profilo.
+
+> **Aggiorna se hai la 0.1 o la 0.2.** Fino alla 0.2.0 la configurazione stava in `<profilo>\claude-code`. Quella cartella però è dell'app: ci tiene le versioni di Claude Code e a ogni avvio cancella tutto il resto che trova lì dentro, compresi memorie, skill e plugin del profilo. Dalla 0.3.0 la configurazione sta in `claude-config`. Con `.\ClaudeProfile.ps1 repair <nome>`, a profilo chiuso, lo script la sposta e lascia all'app le sue versioni.
 
 È verificato con un account Pro: sessioni, cronologia, progetti e memoria della scheda Code finiscono nella cartella del profilo, e la configurazione principale non viene toccata.
 
@@ -118,7 +121,7 @@ Verificato con un progetto in `C:\Users\<tu>\prova`: senza l'impostazione vedeva
 
 Altre due note sulla scheda Code nei profili:
 - **Primo accesso alla scheda Code:** la prima volta può chiedere di nuovo l'accesso all'account, perché il server considera troppo vecchio quello iniziale (`session_stale_relogin` nei log). Rifallo con il codice da browser in incognito, come al primo accesso.
-- **Spazio su disco:** l'app scarica i file di Claude Code anche dentro la cartella `claude-code` del profilo.
+- **Spazio su disco:** l'app scarica i file di Claude Code nella cartella `claude-code` del profilo, che gestisce da sola.
 
 Se vuoi che un profilo condivida la configurazione principale, crealo con `-SharedClaudeCode`.
 

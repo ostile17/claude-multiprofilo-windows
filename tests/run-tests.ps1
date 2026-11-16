@@ -19,7 +19,7 @@ foreach ($bad in @('Lavoro', '../x', 'a b', 'claude', 'claude-x', 'con', '-x', (
 $o = Run add test1 -Force
 $d = Join-Path $root 'test1'
 Check 'add: marcatore creato' (Test-Path -LiteralPath "$d\profilo.json")
-Check 'add: cartella claude-code' (Test-Path -LiteralPath "$d\claude-code")
+Check 'add: cartella claude-config' (Test-Path -LiteralPath "$d\claude-config")
 Check 'add: avviatore creato' (Test-Path -LiteralPath "$root\avvia-profilo.vbs")
 $bom = [IO.File]::ReadAllBytes("$root\avvia-profilo.vbs")[0..1]
 Check 'add: avviatore in UTF-16 con BOM' ($bom[0] -eq 0xFF -and $bom[1] -eq 0xFE)
@@ -49,31 +49,37 @@ Check 'repair: adotta cartella manuale' ((Test-Path -LiteralPath "$man\profilo.j
 # 7 scheda Code condivisa + avvio automatico
 $o = Run add condiviso -SharedClaudeCode -StartWithWindows -NoDesktopShortcut -Force
 Check 'shared: file flag presente' (Test-Path -LiteralPath "$root\condiviso\claude-code-condiviso")
-Check 'shared: nessuna cartella claude-code' (-not (Test-Path -LiteralPath "$root\condiviso\claude-code"))
+Check 'shared: nessuna cartella claude-config' (-not (Test-Path -LiteralPath "$root\condiviso\claude-config"))
 $cn = (Get-ChildItem -LiteralPath $sc -Filter '*condiviso*').Name
 Check 'shared: menu + avvio, niente desktop' ($cn.Count -eq 2 -and ($cn -match '^avvio-') -and -not ($cn -match '^desktop-'))
 $o = Run repair condiviso -Force
 Check 'repair conserva le opzioni (shared, avvio)' ((Test-Path -LiteralPath "$root\condiviso\claude-code-condiviso") -and @((Get-ChildItem -LiteralPath $sc -Filter '*condiviso*')).Count -eq 2)
 # 7b esclusione delle istruzioni personali (claudeMdExcludes)
 $mainMd = (Join-Path $env:USERPROFILE '.claude\CLAUDE.md') -replace '\\', '/'
-$sj = Join-Path $d 'claude-code\settings.json'
+$sj = Join-Path $d 'claude-config\settings.json'
 Check 'excludes: settings.json creato' (Test-Path -LiteralPath $sj)
 $sb = [IO.File]::ReadAllBytes($sj)
 Check 'excludes: settings.json senza BOM' (-not ($sb[0] -eq 0xEF -and $sb[1] -eq 0xBB))
 Check 'excludes: contiene il CLAUDE.md principale' (@((Get-Content -LiteralPath $sj -Raw | ConvertFrom-Json).claudeMdExcludes) -contains $mainMd)
-Check 'shared: nessun settings.json' (-not (Test-Path -LiteralPath (Join-Path $root 'condiviso\claude-code\settings.json')))
+Check 'shared: nessun settings.json' (-not (Test-Path -LiteralPath (Join-Path $root 'condiviso\claude-config\settings.json')))
 $mg = Join-Path $root 'unione'; New-Item -ItemType Directory -Force (Join-Path $mg 'claude-code') | Out-Null
 [IO.File]::WriteAllText((Join-Path $mg 'claude-code\settings.json'), '{"model":"modello-test","claudeMdExcludes":["D:/altro/CLAUDE.md"]}')
+New-Item -ItemType Directory -Force (Join-Path $mg 'claude-code\2.1.325') | Out-Null; [IO.File]::WriteAllText((Join-Path $mg 'claude-code\2.1.325\claude.exe'), 'bin')
 $o = Run repair unione -Force
-$mj = Get-Content -LiteralPath (Join-Path $mg 'claude-code\settings.json') -Raw | ConvertFrom-Json
+$mj = Get-Content -LiteralPath (Join-Path $mg 'claude-config\settings.json') -Raw | ConvertFrom-Json
 Check 'excludes: altre impostazioni conservate' ($mj.model -eq 'modello-test')
 Check 'excludes: esclusioni esistenti conservate e unite' ((@($mj.claudeMdExcludes) -contains 'D:/altro/CLAUDE.md') -and (@($mj.claudeMdExcludes) -contains $mainMd))
 $o = Run repair unione -Force
-Check 'excludes: nessun duplicato dopo un secondo repair' (@((Get-Content -LiteralPath (Join-Path $mg 'claude-code\settings.json') -Raw | ConvertFrom-Json).claudeMdExcludes | Where-Object { $_ -ceq $mainMd }).Count -eq 1)
+Check 'excludes: nessun duplicato dopo un secondo repair' (@((Get-Content -LiteralPath (Join-Path $mg 'claude-config\settings.json') -Raw | ConvertFrom-Json).claudeMdExcludes | Where-Object { $_ -ceq $mainMd }).Count -eq 1)
+# 7c spostamento da claude-code (0.2.0) a claude-config (0.3.0)
+Check 'legacy: settings.json spostato in claude-config' ((Test-Path -LiteralPath (Join-Path $mg 'claude-config\settings.json')) -and -not (Test-Path -LiteralPath (Join-Path $mg 'claude-code\settings.json')))
+Check 'legacy: cartella versione dell''app lasciata in claude-code' (Test-Path -LiteralPath (Join-Path $mg 'claude-code\2.1.325\claude.exe'))
+Check 'legacy: nessuna versione dell''app copiata in claude-config' (-not (Test-Path -LiteralPath (Join-Path $mg 'claude-config\2.1.325')))
+Check 'avviatore: usa claude-config' ([IO.File]::ReadAllText("$root\avvia-profilo.vbs") -match '\\claude-config"')
 $bk = Join-Path $root 'rotto'; New-Item -ItemType Directory -Force (Join-Path $bk 'claude-code') | Out-Null
 [IO.File]::WriteAllText((Join-Path $bk 'claude-code\settings.json'), '{ non json')
 $o = Run repair rotto -Force
-Check 'excludes: JSON illeggibile lasciato intatto' (([IO.File]::ReadAllText((Join-Path $bk 'claude-code\settings.json'))) -eq '{ non json')
+Check 'excludes: JSON illeggibile lasciato intatto' (([IO.File]::ReadAllText((Join-Path $bk 'claude-config\settings.json'))) -eq '{ non json')
 Check 'excludes: avviso per JSON illeggibile' ($o -match 'non è un JSON valido')
 # 8 remove
 $o = Run remove test1 -Force

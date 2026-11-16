@@ -55,7 +55,12 @@ $ErrorActionPreference = 'Stop'
 $ScriptBound = $PSBoundParameters
 
 $ToolId = 'claude-multiprofilo-windows'
-$ToolVersion = '0.2.0'
+$ToolVersion = '0.3.0'
+# Configurazione Claude Code del profilo (CLAUDE_CONFIG_DIR). NON usare "claude-code":
+# l'app tiene in <profilo>\claude-code le sue versioni di Claude Code e a ogni avvio
+# cancella come "versione vecchia" ogni altra cartella che trova lì dentro.
+$CodeDirName = 'claude-config'
+$LegacyCodeDirName = 'claude-code'
 $MarkerName = 'profilo.json'
 $SharedCodeFlag = 'claude-code-condiviso'
 $LauncherName = 'avvia-profilo.vbs'
@@ -166,7 +171,7 @@ End If
 
 ' La scheda Code del profilo usa la sua configurazione di Claude Code, non ~/.claude.
 If Not fso.FileExists(dataDir & "\claude-code-condiviso") Then
-  codeDir = dataDir & "\claude-code"
+  codeDir = dataDir & "\claude-config"
   If Not fso.FolderExists(codeDir) Then fso.CreateFolder codeDir
   sh.Environment("Process")("CLAUDE_CONFIG_DIR") = codeDir
 End If
@@ -256,6 +261,28 @@ function Get-ProfileProcesses([string]$dir) {
     }
 }
 
+# Fino alla 0.2.0 la configurazione stava in <profilo>\claude-code, la cartella dove
+# l'app tiene le versioni di Claude Code: a ogni avvio l'app cancella lì dentro le
+# cartelle che non sono una versione (projects, plugins, skills...). Sposto in
+# claude-config tutto ciò che non è una versione, senza sovrascrivere nulla.
+function Move-LegacyCodeConfig([string]$dir) {
+    $legacy = Join-Path $dir $LegacyCodeDirName
+    if (-not (Test-Path -LiteralPath $legacy)) { return }
+    $items = @(Get-ChildItem -LiteralPath $legacy -Force | Where-Object { $_.Name -notmatch '^\d+\.\d+\.\d+$' })
+    if (-not $items.Count) { return }
+    if (@(Get-ProfileProcesses $dir).Count) {
+        throw "Il profilo è aperto: chiudilo dal menu della sua finestra (File > Esci) per spostare la sua configurazione Claude Code in $CodeDirName\."
+    }
+    $new = Join-Path $dir $CodeDirName
+    New-Item -ItemType Directory -Force -Path $new | Out-Null
+    foreach ($i in $items) {
+        $dest = Join-Path $new $i.Name
+        if (Test-Path -LiteralPath $dest) { Write-Warn "$dest esiste già: lascio $($i.FullName) dov'è."; continue }
+        Move-Item -LiteralPath $i.FullName -Destination $dest
+    }
+    Write-Ok "Configurazione Claude Code spostata da $LegacyCodeDirName\ a $CodeDirName\ (l'app svuota $LegacyCodeDirName\ a ogni avvio)."
+}
+
 function Install-Profile([string]$n, $marker) {
     $dir = Get-ProfileDir $n
     $display = if ($DisplayName) { $DisplayName } elseif ($marker -and $marker.displayName) { $marker.displayName } else { $n }
@@ -268,7 +295,8 @@ function Install-Profile([string]$n, $marker) {
         New-Item -ItemType File -Force -Path (Join-Path $dir $SharedCodeFlag) | Out-Null
     } else {
         Remove-Item -LiteralPath (Join-Path $dir $SharedCodeFlag) -Force -ErrorAction SilentlyContinue
-        $codeDir = Join-Path $dir 'claude-code'
+        Move-LegacyCodeConfig $dir
+        $codeDir = Join-Path $dir $CodeDirName
         New-Item -ItemType Directory -Force -Path $codeDir | Out-Null
         $null = Set-ClaudeMdExclude $codeDir
     }
@@ -314,7 +342,7 @@ function Invoke-Add {
     $r = Install-Profile $Name $null
     Write-Ok "Profilo '$Name' creato in $($r.Dir)"
     foreach ($l in $r.Links) { Write-Ok "Collegamento: $l" }
-    if (-not $r.Shared) { Write-Ok 'Scheda Code separata: configurazione in claude-code\ dentro il profilo, istruzioni personali del Claude principale escluse.' }
+    if (-not $r.Shared) { Write-Ok 'Scheda Code separata: configurazione in claude-config\ dentro il profilo, istruzioni personali del Claude principale escluse.' }
     Write-Host ''
     Write-Host '  Primo accesso (importante):' -ForegroundColor Cyan
     Write-Info "1. Apri 'Claude ($($r.Display))' e scegli 'Continua con email'."
