@@ -7,7 +7,7 @@ if (Test-Path -LiteralPath $Base) { Remove-Item -LiteralPath $Base -Recurse -For
 New-Item -ItemType Directory -Force $root, $sc | Out-Null
 $script:fail = 0
 function Check($label, [bool]$cond) { if ($cond) { "PASS  $label" } else { "FAIL  $label"; $script:fail++ } }
-function Run { $cmd = "& '$Script' $($args -join ' ') -Root '$root' -ShortcutDir '$sc'"; try { (Invoke-Expression $cmd *>&1 | Out-String) -join "`n" } catch { "ERRORE: " + $_.Exception.Message } }
+function Run { $cmd = "& '$Script' $($args -join ' ') -Root '$root' -ShortcutDir '$sc'"; try { (Invoke-Expression $cmd *>&1 | Out-String -Width 4096) -join "`n" } catch { "ERRORE: " + $_.Exception.Message } }
 $wsh = New-Object -ComObject WScript.Shell
 
 "== PowerShell $($PSVersionTable.PSVersion)"
@@ -54,6 +54,27 @@ $cn = (Get-ChildItem -LiteralPath $sc -Filter '*condiviso*').Name
 Check 'shared: menu + avvio, niente desktop' ($cn.Count -eq 2 -and ($cn -match '^avvio-') -and -not ($cn -match '^desktop-'))
 $o = Run repair condiviso -Force
 Check 'repair conserva le opzioni (shared, avvio)' ((Test-Path -LiteralPath "$root\condiviso\claude-code-condiviso") -and @((Get-ChildItem -LiteralPath $sc -Filter '*condiviso*')).Count -eq 2)
+# 7b esclusione delle istruzioni personali (claudeMdExcludes)
+$mainMd = (Join-Path $env:USERPROFILE '.claude\CLAUDE.md') -replace '\\', '/'
+$sj = Join-Path $d 'claude-code\settings.json'
+Check 'excludes: settings.json creato' (Test-Path -LiteralPath $sj)
+$sb = [IO.File]::ReadAllBytes($sj)
+Check 'excludes: settings.json senza BOM' (-not ($sb[0] -eq 0xEF -and $sb[1] -eq 0xBB))
+Check 'excludes: contiene il CLAUDE.md principale' (@((Get-Content -LiteralPath $sj -Raw | ConvertFrom-Json).claudeMdExcludes) -contains $mainMd)
+Check 'shared: nessun settings.json' (-not (Test-Path -LiteralPath (Join-Path $root 'condiviso\claude-code\settings.json')))
+$mg = Join-Path $root 'unione'; New-Item -ItemType Directory -Force (Join-Path $mg 'claude-code') | Out-Null
+[IO.File]::WriteAllText((Join-Path $mg 'claude-code\settings.json'), '{"model":"modello-test","claudeMdExcludes":["D:/altro/CLAUDE.md"]}')
+$o = Run repair unione -Force
+$mj = Get-Content -LiteralPath (Join-Path $mg 'claude-code\settings.json') -Raw | ConvertFrom-Json
+Check 'excludes: altre impostazioni conservate' ($mj.model -eq 'modello-test')
+Check 'excludes: esclusioni esistenti conservate e unite' ((@($mj.claudeMdExcludes) -contains 'D:/altro/CLAUDE.md') -and (@($mj.claudeMdExcludes) -contains $mainMd))
+$o = Run repair unione -Force
+Check 'excludes: nessun duplicato dopo un secondo repair' (@((Get-Content -LiteralPath (Join-Path $mg 'claude-code\settings.json') -Raw | ConvertFrom-Json).claudeMdExcludes | Where-Object { $_ -ceq $mainMd }).Count -eq 1)
+$bk = Join-Path $root 'rotto'; New-Item -ItemType Directory -Force (Join-Path $bk 'claude-code') | Out-Null
+[IO.File]::WriteAllText((Join-Path $bk 'claude-code\settings.json'), '{ non json')
+$o = Run repair rotto -Force
+Check 'excludes: JSON illeggibile lasciato intatto' (([IO.File]::ReadAllText((Join-Path $bk 'claude-code\settings.json'))) -eq '{ non json')
+Check 'excludes: avviso per JSON illeggibile' ($o -match 'non è un JSON valido')
 # 8 remove
 $o = Run remove test1 -Force
 Check 'remove: collegamenti rimossi' (-not (Get-ChildItem -LiteralPath $sc -Filter '*Prova Uno*'))

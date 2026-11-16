@@ -55,7 +55,7 @@ $ErrorActionPreference = 'Stop'
 $ScriptBound = $PSBoundParameters
 
 $ToolId = 'claude-multiprofilo-windows'
-$ToolVersion = '0.1.0'
+$ToolVersion = '0.2.0'
 $MarkerName = 'profilo.json'
 $SharedCodeFlag = 'claude-code-condiviso'
 $LauncherName = 'avvia-profilo.vbs'
@@ -190,6 +190,37 @@ sh.Run """" & exe & """ --user-data-dir=""" & dataDir & """", 1, False
     return $dest
 }
 
+# Claude Code legge anche i CLAUDE.md delle cartelle superiori al progetto. Per un
+# progetto dentro la cartella utente, una di queste è %USERPROFILE%, e il suo
+# .claude\CLAUDE.md sono le istruzioni personali del Claude Code principale. Le
+# escludo nelle impostazioni utente del profilo (claudeMdExcludes), unendole a
+# quelle già presenti. Un settings.json illeggibile non viene toccato.
+function Set-ClaudeMdExclude([string]$codeDir) {
+    $settings = Join-Path $codeDir 'settings.json'
+    $main = (Join-Path $env:USERPROFILE '.claude\CLAUDE.md') -replace '\\', '/'
+    $patterns = @($main, ($main.Substring(0, 1).ToLowerInvariant() + $main.Substring(1)),
+        ($main.Substring(0, 1).ToUpperInvariant() + $main.Substring(1))) | Select-Object -Unique
+
+    $obj = [pscustomobject]@{}
+    if (Test-Path -LiteralPath $settings) {
+        try {
+            $raw = [IO.File]::ReadAllText($settings)
+            if ($raw.Trim()) { $obj = $raw | ConvertFrom-Json }
+        } catch {
+            Write-Warn "$settings non è un JSON valido: non lo modifico. Le istruzioni personali potrebbero essere lette dai progetti dentro la cartella utente."
+            return $false
+        }
+    }
+    $current = @()
+    $prop = $obj.PSObject.Properties['claudeMdExcludes']
+    if ($prop) { $current = @($prop.Value) }
+    $merged = @($current + $patterns | Where-Object { $_ } | Select-Object -Unique)
+    $obj | Add-Member -NotePropertyName 'claudeMdExcludes' -NotePropertyValue $merged -Force
+    # UTF-8 senza BOM: Claude Code legge il file come JSON puro.
+    [IO.File]::WriteAllText($settings, ($obj | ConvertTo-Json -Depth 20), [Text.UTF8Encoding]::new($false))
+    return $true
+}
+
 function Get-ShortcutTargets([string]$display, [bool]$desktop, [bool]$startup) {
     $file = "Claude ($display).lnk"
     if ($ShortcutDir) {
@@ -237,7 +268,9 @@ function Install-Profile([string]$n, $marker) {
         New-Item -ItemType File -Force -Path (Join-Path $dir $SharedCodeFlag) | Out-Null
     } else {
         Remove-Item -LiteralPath (Join-Path $dir $SharedCodeFlag) -Force -ErrorAction SilentlyContinue
-        New-Item -ItemType Directory -Force -Path (Join-Path $dir 'claude-code') | Out-Null
+        $codeDir = Join-Path $dir 'claude-code'
+        New-Item -ItemType Directory -Force -Path $codeDir | Out-Null
+        $null = Set-ClaudeMdExclude $codeDir
     }
 
     $launcher = Install-Launcher
@@ -281,7 +314,7 @@ function Invoke-Add {
     $r = Install-Profile $Name $null
     Write-Ok "Profilo '$Name' creato in $($r.Dir)"
     foreach ($l in $r.Links) { Write-Ok "Collegamento: $l" }
-    if (-not $r.Shared) { Write-Ok 'Scheda Code separata: configurazione in claude-code\ dentro il profilo.' }
+    if (-not $r.Shared) { Write-Ok 'Scheda Code separata: configurazione in claude-code\ dentro il profilo, istruzioni personali del Claude principale escluse.' }
     Write-Host ''
     Write-Host '  Primo accesso (importante):' -ForegroundColor Cyan
     Write-Info "1. Apri 'Claude ($($r.Display))' e scegli 'Continua con email'."

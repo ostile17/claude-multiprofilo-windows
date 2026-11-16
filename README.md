@@ -105,11 +105,14 @@ Nomi dei profili: lettere minuscole, cifre e trattini, fino a 40 caratteri.
 
 È verificato con un account Pro: sessioni, cronologia, progetti e memoria della scheda Code finiscono nella cartella del profilo, e la configurazione principale non viene toccata.
 
-**Attenzione: progetti dentro la cartella utente.** Claude Code legge anche i `CLAUDE.md` e i `.claude\CLAUDE.md` di tutte le cartelle superiori al progetto. Se apri un progetto dentro `C:\Users\<tu>\`, la cartella utente è una di queste. Il file `C:\Users\<tu>\.claude\CLAUDE.md`, cioè le istruzioni personali del Claude Code principale, viene quindi letto anche dal profilo, come istruzione di progetto. Nei test:
-- un progetto in `C:\Users\<tu>\prova` vedeva le istruzioni personali;
-- un progetto in `D:\prova` no.
+**Progetti dentro la cartella utente.** Claude Code legge anche i `CLAUDE.md` e i `.claude\CLAUDE.md` di tutte le cartelle superiori al progetto. Per un progetto dentro `C:\Users\<tu>\`, una di queste è la cartella utente, il cui `.claude\CLAUDE.md` contiene le istruzioni personali del Claude Code principale. Senza correzioni il profilo le leggerebbe come istruzione di progetto.
 
-Per una separazione completa, tieni i progetti dei profili fuori dalla cartella utente (per esempio su `D:\`).
+Per questo lo script scrive nel `settings.json` del profilo l'impostazione `claudeMdExcludes`, che esclude solo quel file:
+- le altre impostazioni e le esclusioni già presenti restano;
+- un `settings.json` illeggibile non viene toccato;
+- i CLAUDE.md dei progetti continuano a essere letti normalmente.
+
+Verificato con un progetto in `C:\Users\<tu>\prova`: senza l'impostazione vedeva le istruzioni personali, con l'impostazione no. Con `-SharedClaudeCode` l'impostazione non viene scritta.
 
 Altre due note sulla scheda Code nei profili:
 - **Primo accesso alla scheda Code:** la prima volta può chiedere di nuovo l'accesso all'account, perché il server considera troppo vecchio quello iniziale (`session_stale_relogin` nei log). Rifallo con il codice da browser in incognito, come al primo accesso.
