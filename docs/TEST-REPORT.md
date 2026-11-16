@@ -23,7 +23,8 @@ Prove su un'installazione reale, con il Claude principale e un profilo aggiuntiv
 | D6 | `CLAUDE_CONFIG_DIR` arriva all'app attraverso l'alias MSIX | ✅ | Letto dall'ambiente del processo Claude in esecuzione |
 | D7 | Chiusura completa e riapertura: l'accesso resta | ✅ | Prova manuale e log: stessa organizzazione dopo la riapertura |
 | D8 | Accesso di un nuovo account al profilo | ✅ con procedura | Funziona con il codice di verifica letto in incognito. Il link `claude://` è arrivato al principale (log: `claudeURLHandler: login`), che per fortuna non ha cambiato account |
-| D9 | Scheda Code del profilo isolata da `~/.claude` | ⏸ In attesa | Serve un account a pagamento sul profilo; prima dell'acquisto la scheda Code dava errori 403 |
+| D9 | Scheda Code del profilo isolata da `~/.claude` | ✅ con un limite | Con account Pro: `CLAUDE_CONFIG_DIR` corretto nella sessione; progetti, sessioni e cronologia scritti nel profilo; nessun progetto nuovo nel `~/.claude` principale. **Limite:** un progetto dentro la cartella utente eredita `C:\Users\<tu>\.claude\CLAUDE.md` come istruzione di una cartella superiore (verificato: progetto in `C:\Users\…\prova` sì, in `D:\prova` no) |
+| D9b | Accesso alla scheda Code dopo il passaggio a Pro | ⚠️ Nuovo accesso | Il server ha rifiutato l'accesso iniziale come troppo vecchio (`session_stale_relogin`) e le sessioni Code non partivano finché non è stato rifatto. Il link `claude://` è arrivato ancora al principale, che è rimasto sul suo account |
 | D10 | Claude in Chrome con più istanze | ❓ Non testato | Ogni istanza, all'avvio, registra lo stesso host dell'estensione (`HKCU\...\NativeMessagingHosts\com.anthropic.claude_browser_extension`) |
 | D11 | Cowork con più istanze | ❓ Non testato | Servizio unico del pacchetto (`CoworkVMService`) |
 | D12 | Aggiornamento di Claude con un profilo aperto | ⚠️ Limite | L'aggiornamento MSIX chiude tutte le istanze ("Windows session ending (close-app)") e riapre solo il principale. Il profilo resta chiuso finché non lo riapri |
@@ -57,7 +58,7 @@ Durante tutti i test, il Claude principale e il profilo reale sono rimasti apert
 
 ## 4. Da verificare
 
-- D9: scheda Code con un account a pagamento nel profilo.
+- Escludere il `CLAUDE.md` della cartella utente con l'impostazione `claudeMdExcludes` nel `settings.json` del profilo, per i progetti dentro la cartella utente.
 - D10, D11: Claude in Chrome e Cowork con più istanze aperte.
 - Installazione classica da claude.ai/download (Squirrel, `%LOCALAPPDATA%\AnthropicClaude`).
 - Windows 10.

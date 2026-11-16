@@ -101,7 +101,19 @@ Nomi dei profili: lettere minuscole, cifre e trattini, fino a 40 caratteri.
 
 ## Scheda Code
 
-`--user-data-dir` separa solo i dati di Claude Desktop. Le sessioni della scheda **Code** leggerebbero comunque la configurazione principale di Claude Code (`~/.claude`: CLAUDE.md, impostazioni, skill, memoria). Per evitarlo, l'avviatore imposta `CLAUDE_CONFIG_DIR` sulla cartella `claude-code` del profilo. È verificato che la variabile arrivi all'app. Il comportamento della scheda Code con un account a pagamento è [in verifica](docs/TEST-REPORT.md).
+`--user-data-dir` separa solo i dati di Claude Desktop. Le sessioni della scheda **Code** leggerebbero comunque la configurazione principale di Claude Code (`~/.claude`: CLAUDE.md, impostazioni, skill, memoria). Per evitarlo, l'avviatore imposta `CLAUDE_CONFIG_DIR` sulla cartella `claude-code` del profilo.
+
+È verificato con un account Pro: sessioni, cronologia, progetti e memoria della scheda Code finiscono nella cartella del profilo, e la configurazione principale non viene toccata.
+
+**Attenzione: progetti dentro la cartella utente.** Claude Code legge anche i `CLAUDE.md` e i `.claude\CLAUDE.md` di tutte le cartelle superiori al progetto. Se apri un progetto dentro `C:\Users\<tu>\`, la cartella utente è una di queste. Il file `C:\Users\<tu>\.claude\CLAUDE.md`, cioè le istruzioni personali del Claude Code principale, viene quindi letto anche dal profilo, come istruzione di progetto. Nei test:
+- un progetto in `C:\Users\<tu>\prova` vedeva le istruzioni personali;
+- un progetto in `D:\prova` no.
+
+Per una separazione completa, tieni i progetti dei profili fuori dalla cartella utente (per esempio su `D:\`).
+
+Altre due note sulla scheda Code nei profili:
+- **Primo accesso alla scheda Code:** la prima volta può chiedere di nuovo l'accesso all'account, perché il server considera troppo vecchio quello iniziale (`session_stale_relogin` nei log). Rifallo con il codice da browser in incognito, come al primo accesso.
+- **Spazio su disco:** l'app scarica i file di Claude Code anche dentro la cartella `claude-code` del profilo.
 
 Se vuoi che un profilo condivida la configurazione principale, crealo con `-SharedClaudeCode`.
 
