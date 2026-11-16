@@ -27,7 +27,8 @@ Prove su un'installazione reale, con il Claude principale e un profilo aggiuntiv
 | D9c | Progetto dentro la cartella utente | ✅ dalla 0.2.0 | Senza correzioni, un progetto in `C:\Users\…\prova` ereditava `C:\Users\<tu>\.claude\CLAUDE.md` come istruzione di una cartella superiore (in `D:\prova` no). Con `claudeMdExcludes` nel `settings.json` del profilo, la sessione nella stessa cartella non lo vede più |
 | D9b | Accesso alla scheda Code dopo il passaggio a Pro | ⚠️ Nuovo accesso | Il server ha rifiutato l'accesso iniziale come troppo vecchio (`session_stale_relogin`) e le sessioni Code non partivano finché non è stato rifatto. Il link `claude://` è arrivato ancora al principale, che è rimasto sul suo account |
 | D10 | Claude in Chrome con più istanze | ⚠️ Solo un account | Ogni istanza, all'avvio, riscrive lo stesso host dell'estensione (`HKCU\...\NativeMessagingHosts\com.anthropic.claude_browser_extension`) e c'è un solo canale locale (`\\.\pipe\claude-mcp-browser-bridge-<utente>`). Con l'estensione entrata con l'account del principale: il principale vede il browser anche dopo l'avvio del profilo; il profilo risponde "nessun browser collegato". Nessuna interferenza |
-| D11 | Cowork con più istanze | ❓ Non verificabile | Servizio unico del pacchetto (`CoworkVMService`, in esecuzione). Nel profilo con account Pro il pulsante Cowork non compare; nei log del profilo non ci sono errori legati a Cowork. Il profilo salva i file di Cowork in `C:\Users\<tu>\Claude` (`coworkUserFilesPath`) |
+| D11 | Cowork (attività locali dalla chat) con più istanze | ✅ | Da settembre 2026 Cowork è integrato nella chat: nessun pulsante dedicato, né nel principale né nel profilo. Due chat avviate a circa 30 secondi di distanza, una per istanza, hanno creato ciascuna il proprio file in `D:\prova-cowork`. Ogni istanza ha salvato la sessione nella propria cartella `local-agent-mode-sessions\<account>` senza riferimenti all'altra. Servizio `CoworkVMService` unico e sempre attivo. Al primo uso il profilo ha scaricato la propria macchina virtuale: circa 9 GB in `vm_bundles` e 350 MB in `claude-code-vm`, come il principale |
+| D13 | Riavvio deciso dall'app (per esempio dopo lo scarico della macchina virtuale) | ✅ | Il profilo si è riavviato da solo con `--user-data-dir` e `--restarted-by-app`; `CLAUDE_CONFIG_DIR` era ancora presente nel nuovo processo |
 | D12 | Aggiornamento di Claude con un profilo aperto | ⚠️ Limite | L'aggiornamento MSIX chiude tutte le istanze ("Windows session ending (close-app)") e riapre solo il principale. Il profilo resta chiuso finché non lo riapri |
 
 ## 2. Test dello script (`tests/run-tests.ps1`)
@@ -61,7 +62,7 @@ Durante tutti i test, il Claude principale e il profilo reale sono rimasti apert
 ## 4. Da verificare
 
 - Claude in Chrome per un secondo account tramite un secondo profilo di Chrome con l'estensione abbinata a quell'account.
-- Cowork con due account che lo hanno entrambi disponibile.
+- Attività locali lunghe che usano davvero la macchina virtuale in entrambe le istanze nello stesso momento (nei test i file sono stati creati prima che la macchina virtuale del profilo finisse di scaricarsi).
 - Installazione classica da claude.ai/download (Squirrel, `%LOCALAPPDATA%\AnthropicClaude`).
 - Windows 10.
 

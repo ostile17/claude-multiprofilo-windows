@@ -92,11 +92,12 @@ Nomi dei profili: lettere minuscole, cifre e trattini, fino a 40 caratteri.
 
 | Limite | Cosa comporta |
 |---|---|
-| **Gli aggiornamenti chiudono tutti i profili** | Windows chiude ogni istanza del pacchetto per installare l'aggiornamento e riapre solo il Claude principale. I profili vanno riaperti a mano; le loro sessioni in corso vengono interrotte. |
+| **Gli aggiornamenti chiudono tutti i profili** | Windows chiude ogni istanza del pacchetto per installare l'aggiornamento e riapre solo il Claude principale. I profili vanno riaperti a mano; le loro sessioni in corso vengono interrotte. I riavvii decisi dall'app stessa, invece, mantengono il profilo e la separazione della scheda Code. |
 | **I link `claude://` vanno al Claude principale** | Per questo l'accesso si fa con il codice (vedi sopra). Vale anche per altri link che aprono l'app dal browser. |
 | **Le finestre non si distinguono** | Si chiamano tutte "Claude" e hanno la stessa icona. Puoi fissare i collegamenti dei profili sulla barra delle applicazioni. |
 | **Claude in Chrome** | L'estensione si abbina a un solo account claude.ai, quello con cui è entrata in Chrome. Solo l'istanza di quell'account vede il browser; le altre risultano senza browser collegato. Le istanze non si disturbano a vicenda. Usare l'estensione con un altro account in un secondo profilo di Chrome potrebbe funzionare, ma non è testato. |
-| **Cowork** | Usa un unico servizio di sistema (`CoworkVMService`) per tutte le istanze. Con l'account Pro usato nei test il pulsante Cowork non compariva nel profilo, quindi l'uso contemporaneo non è stato verificato. |
+| **Cowork** | Da settembre 2026 Cowork è integrato nella chat: non c'è più un pulsante dedicato. Nei test, due chat avviate quasi insieme hanno creato ciascuna il proprio file sul disco, e ogni istanza ha salvato la sessione nella propria cartella. Il servizio di sistema (`CoworkVMService`) è uno solo per tutte le istanze. |
+| **Spazio su disco** | Ogni profilo scarica la propria macchina virtuale per le attività locali (circa 9 GB in `vm_bundles`) e i propri file di Claude Code. Conta circa 10 GB per ogni profilo che usa queste funzioni. |
 | **Isolamento per cartelle, non sandbox** | Ogni programma che gira con il tuo utente Windows può leggere le cartelle di tutti i profili. |
 | **Installazione da claude.ai/download** | Supportata nel codice (`%LOCALAPPDATA%\AnthropicClaude\claude.exe`) ma non ancora testata. |
 
