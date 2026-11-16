@@ -26,8 +26,8 @@ Prove su un'installazione reale, con il Claude principale e un profilo aggiuntiv
 | D9 | Scheda Code del profilo isolata da `~/.claude` | ✅ | Con account Pro: `CLAUDE_CONFIG_DIR` corretto nella sessione; progetti, sessioni e cronologia scritti nel profilo; nessun progetto nuovo nel `~/.claude` principale |
 | D9c | Progetto dentro la cartella utente | ✅ dalla 0.2.0 | Senza correzioni, un progetto in `C:\Users\…\prova` ereditava `C:\Users\<tu>\.claude\CLAUDE.md` come istruzione di una cartella superiore (in `D:\prova` no). Con `claudeMdExcludes` nel `settings.json` del profilo, la sessione nella stessa cartella non lo vede più |
 | D9b | Accesso alla scheda Code dopo il passaggio a Pro | ⚠️ Nuovo accesso | Il server ha rifiutato l'accesso iniziale come troppo vecchio (`session_stale_relogin`) e le sessioni Code non partivano finché non è stato rifatto. Il link `claude://` è arrivato ancora al principale, che è rimasto sul suo account |
-| D10 | Claude in Chrome con più istanze | ❓ Non testato | Ogni istanza, all'avvio, registra lo stesso host dell'estensione (`HKCU\...\NativeMessagingHosts\com.anthropic.claude_browser_extension`) |
-| D11 | Cowork con più istanze | ❓ Non testato | Servizio unico del pacchetto (`CoworkVMService`) |
+| D10 | Claude in Chrome con più istanze | ⚠️ Solo un account | Ogni istanza, all'avvio, riscrive lo stesso host dell'estensione (`HKCU\...\NativeMessagingHosts\com.anthropic.claude_browser_extension`) e c'è un solo canale locale (`\\.\pipe\claude-mcp-browser-bridge-<utente>`). Con l'estensione entrata con l'account del principale: il principale vede il browser anche dopo l'avvio del profilo; il profilo risponde "nessun browser collegato". Nessuna interferenza |
+| D11 | Cowork con più istanze | ❓ Non verificabile | Servizio unico del pacchetto (`CoworkVMService`, in esecuzione). Nel profilo con account Pro il pulsante Cowork non compare; nei log del profilo non ci sono errori legati a Cowork. Il profilo salva i file di Cowork in `C:\Users\<tu>\Claude` (`coworkUserFilesPath`) |
 | D12 | Aggiornamento di Claude con un profilo aperto | ⚠️ Limite | L'aggiornamento MSIX chiude tutte le istanze ("Windows session ending (close-app)") e riapre solo il principale. Il profilo resta chiuso finché non lo riapri |
 
 ## 2. Test dello script (`tests/run-tests.ps1`)
@@ -60,7 +60,8 @@ Durante tutti i test, il Claude principale e il profilo reale sono rimasti apert
 
 ## 4. Da verificare
 
-- D10, D11: Claude in Chrome e Cowork con più istanze aperte.
+- Claude in Chrome per un secondo account tramite un secondo profilo di Chrome con l'estensione abbinata a quell'account.
+- Cowork con due account che lo hanno entrambi disponibile.
 - Installazione classica da claude.ai/download (Squirrel, `%LOCALAPPDATA%\AnthropicClaude`).
 - Windows 10.
 

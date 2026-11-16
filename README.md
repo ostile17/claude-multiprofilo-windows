@@ -95,7 +95,8 @@ Nomi dei profili: lettere minuscole, cifre e trattini, fino a 40 caratteri.
 | **Gli aggiornamenti chiudono tutti i profili** | Windows chiude ogni istanza del pacchetto per installare l'aggiornamento e riapre solo il Claude principale. I profili vanno riaperti a mano; le loro sessioni in corso vengono interrotte. |
 | **I link `claude://` vanno al Claude principale** | Per questo l'accesso si fa con il codice (vedi sopra). Vale anche per altri link che aprono l'app dal browser. |
 | **Le finestre non si distinguono** | Si chiamano tutte "Claude" e hanno la stessa icona. Puoi fissare i collegamenti dei profili sulla barra delle applicazioni. |
-| **Claude in Chrome e Cowork** | Usano componenti unici per tutte le istanze (host dell'estensione Chrome, servizio Cowork). Il comportamento con più profili aperti non è ancora testato. |
+| **Claude in Chrome** | L'estensione si abbina a un solo account claude.ai, quello con cui è entrata in Chrome. Solo l'istanza di quell'account vede il browser; le altre risultano senza browser collegato. Le istanze non si disturbano a vicenda. Usare l'estensione con un altro account in un secondo profilo di Chrome potrebbe funzionare, ma non è testato. |
+| **Cowork** | Usa un unico servizio di sistema (`CoworkVMService`) per tutte le istanze. Con l'account Pro usato nei test il pulsante Cowork non compariva nel profilo, quindi l'uso contemporaneo non è stato verificato. |
 | **Isolamento per cartelle, non sandbox** | Ogni programma che gira con il tuo utente Windows può leggere le cartelle di tutti i profili. |
 | **Installazione da claude.ai/download** | Supportata nel codice (`%LOCALAPPDATA%\AnthropicClaude\claude.exe`) ma non ancora testata. |
 
