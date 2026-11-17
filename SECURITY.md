@@ -6,7 +6,7 @@
 |---|---|
 | **Rete** | Nessuna. Lo script e l'avviatore non contattano nessun server. |
 | **Privilegi** | Gira con il tuo utente, senza diritti di amministratore. |
-| **Credenziali** | Non legge né copia accessi, token o il Portachiavi/Gestione credenziali di Windows. Ogni profilo fa il proprio accesso. |
+| **Credenziali** | Non legge né copia accessi o token. Ogni profilo fa il proprio accesso. Con `-GitHubUser` controlla solo che nel Gestore credenziali di Windows esista una voce `gh:github.com:<utente>`: legge il **nome** della voce con `cmdkey /list`, mai il contenuto. Il file `gh\hosts.yml` del profilo non contiene token. |
 | **Registro di Windows** | Non lo modifica. |
 | **Scritture** | Solo nella cartella dei profili (predefinita `%USERPROFILE%\ClaudeProfili`) e nei collegamenti `Claude (<nome>).lnk` su Desktop, menu Start ed Esecuzione automatica. |
 | **Cancellazioni** | Solo i collegamenti elencati nel `profilo.json` del profilo. La cartella dati solo con `remove -DeleteData`, solo se contiene `profilo.json` creato da questo strumento, solo se è dentro la cartella dei profili e solo dopo aver scritto il nome del profilo per conferma. |

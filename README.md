@@ -77,6 +77,8 @@ Dopo il primo accesso, il profilo resta collegato anche dopo la chiusura e il ri
 | `-DisplayName "Cliente Rossi"` | Nome nei collegamenti: "Claude (Cliente Rossi)" |
 | `-NoDesktopShortcut` | Solo menu Start, niente icona sul Desktop |
 | `-StartWithWindows` | Apre il profilo all'accensione del PC |
+| `-GitHubUser <login>` | `gh`, e quindi anche `git push` e `pull` su github.com, usa solo questo account GitHub nel profilo. Vedi [GitHub e git per profilo](#github-e-git-per-profilo) |
+| `-GitName "Nome" -GitEmail email` | Identità dei commit fatti dal profilo |
 | `-SharedClaudeCode` | La scheda Code del profilo usa la configurazione Claude Code principale (`~/.claude`) invece di una propria |
 | `-Root <cartella>` | Dove tenere i profili (predefinito `%USERPROFILE%\ClaudeProfili`) |
 | `-Force` | Nessuna domanda di conferma (per script) |
@@ -124,6 +126,34 @@ Altre due note sulla scheda Code nei profili:
 - **Spazio su disco:** l'app scarica i file di Claude Code nella cartella `claude-code` del profilo, che gestisce da sola.
 
 Se vuoi che un profilo condivida la configurazione principale, crealo con `-SharedClaudeCode`.
+
+## GitHub e git per profilo
+
+Senza opzioni, tutte le istanze condividono la stessa identità GitHub:
+- `gh` ha **un solo account attivo** per l'utente Windows;
+- git usa `gh`, o il gestore credenziali, per accedere a github.com;
+- l'identità dei commit è quella globale di git.
+
+Se ogni account Claude lavora con un account GitHub diverso, il profilo può averne uno suo:
+
+```powershell
+.\ClaudeProfile.ps1 repair lavoro -GitHubUser mio-utente -GitName "Mio Nome" -GitEmail me@example.com
+```
+
+**Cosa fa:**
+- crea `<profilo>\gh\hosts.yml`, che dice a `gh` quale account usare nel profilo. **Non contiene token**: il token resta nel Gestore credenziali di Windows, dove `gh` lo ha salvato;
+- crea `<profilo>\gitconfig`, che riprende la tua configurazione git globale (credenziali, alias, impostazioni) e cambia solo l'identità dei commit;
+- fa impostare all'avviatore `GH_CONFIG_DIR` e `GIT_CONFIG_GLOBAL`, che valgono per le sessioni Code del profilo. Valgono dal prossimo avvio del profilo.
+
+**Prerequisito:** l'account deve aver fatto almeno una volta l'accesso a `gh` su questo PC. Se non l'ha fatto:
+
+```powershell
+$env:GH_CONFIG_DIR = "$env:USERPROFILE\ClaudeProfili\lavoro\gh"; gh auth login --hostname github.com --web
+```
+
+Se il browser predefinito è entrato su GitHub con un altro account, **non premere Invio** quando `gh` mostra il codice. Apri `https://github.com/login/device` nel profilo Chrome dove sei entrato con l'account giusto e inserisci lì il codice.
+
+**Verificato:** con l'ambiente del profilo `gh` risponde con il suo account e un `git push --dry-run` su una repo di quell'account è autorizzato. Con l'ambiente principale lo stesso push è negato.
 
 ## Portare in un profilo il lavoro che hai già
 

@@ -81,6 +81,25 @@ $bk = Join-Path $root 'rotto'; New-Item -ItemType Directory -Force (Join-Path $b
 $o = Run repair rotto -Force
 Check 'excludes: JSON illeggibile lasciato intatto' (([IO.File]::ReadAllText((Join-Path $bk 'claude-config\settings.json'))) -eq '{ non json')
 Check 'excludes: avviso per JSON illeggibile' ($o -match 'non è un JSON valido')
+# 7d GitHub e identità git del profilo (0.4.0)
+$o = Run add githubtest -GitHubUser 'utente-di-prova' -GitName "'Nome Prova'" -GitEmail 'prova@example.com' -Force
+$gd = Join-Path $root 'githubtest'
+Check 'github: hosts.yml creato con l''account' ((Test-Path -LiteralPath "$gd\gh\hosts.yml") -and ([IO.File]::ReadAllText("$gd\gh\hosts.yml") -match 'user: utente-di-prova'))
+Check 'github: hosts.yml non contiene token' (-not ([IO.File]::ReadAllText("$gd\gh\hosts.yml") -match '(?i)oauth_token|gho_|ghp_'))
+$gc = [IO.File]::ReadAllText("$gd\gitconfig")
+Check 'git: gitconfig include quello globale' ($gc -match [regex]::Escape(((Join-Path $env:USERPROFILE '.gitconfig') -replace '\\','/')))
+Check 'git: identità del profilo' ($gc -match 'name = Nome Prova' -and $gc -match 'email = prova@example.com')
+Check 'git: identità letta da git' ((& git config --file "$gd\gitconfig" user.email) -eq 'prova@example.com')
+$m7 = Get-Content -LiteralPath "$gd\profilo.json" -Raw | ConvertFrom-Json
+Check 'github: opzioni salvate nel marcatore' ($m7.githubUser -eq 'utente-di-prova' -and $m7.gitEmail -eq 'prova@example.com')
+Remove-Item -LiteralPath "$gd\gitconfig" -Force
+$o = Run repair githubtest -Force
+Check 'repair: ricrea gitconfig dalle opzioni salvate' (Test-Path -LiteralPath "$gd\gitconfig")
+$vb = [IO.File]::ReadAllText("$root\avvia-profilo.vbs")
+Check 'avviatore: imposta GH_CONFIG_DIR e GIT_CONFIG_GLOBAL' ($vb -match 'GH_CONFIG_DIR' -and $vb -match 'GIT_CONFIG_GLOBAL')
+Check 'git: email non valida rifiutata' ((Run add gitrotto -GitName 'X' -GitEmail "'non-una-email'" -Force) -match 'non validi')
+Check 'git: nome senza email rifiutato' ((Run add gitmezzo -GitName 'X' -Force) -match 'servono sia')
+Check 'github: utente non valido rifiutato' ((Run add ghrotto -GitHubUser "'a b'" -Force) -match 'non valido')
 # 8 remove
 $o = Run remove test1 -Force
 Check 'remove: collegamenti rimossi' (-not (Get-ChildItem -LiteralPath $sc -Filter '*Prova Uno*'))

@@ -38,6 +38,14 @@ param(
     # Non separare la scheda Code: le sessioni Claude Code del profilo useranno ~/.claude.
     [switch]$SharedClaudeCode,
 
+    # Account GitHub del profilo: gh (e quindi git push/pull su github.com, che usa gh
+    # per le credenziali) userà solo questo account. Deve essere già entrato in gh.
+    [string]$GitHubUser,
+
+    # Identità dei commit del profilo (user.name e user.email).
+    [string]$GitName,
+    [string]$GitEmail,
+
     # Con 'remove': cancella anche la cartella dati del profilo (chat, accesso, impostazioni).
     [switch]$DeleteData,
 
@@ -55,7 +63,7 @@ $ErrorActionPreference = 'Stop'
 $ScriptBound = $PSBoundParameters
 
 $ToolId = 'claude-multiprofilo-windows'
-$ToolVersion = '0.3.0'
+$ToolVersion = '0.4.0'
 # Configurazione Claude Code del profilo (CLAUDE_CONFIG_DIR). NON usare "claude-code":
 # l'app tiene in <profilo>\claude-code le sue versioni di Claude Code e a ogni avvio
 # cancella come "versione vecchia" ogni altra cartella che trova lì dentro.
@@ -176,6 +184,10 @@ If Not fso.FileExists(dataDir & "\claude-code-condiviso") Then
   sh.Environment("Process")("CLAUDE_CONFIG_DIR") = codeDir
 End If
 
+' GitHub e git del profilo: configurazione gh propria e identità dei commit propria.
+If fso.FolderExists(dataDir & "\gh") Then sh.Environment("Process")("GH_CONFIG_DIR") = dataDir & "\gh"
+If fso.FileExists(dataDir & "\gitconfig") Then sh.Environment("Process")("GIT_CONFIG_GLOBAL") = dataDir & "\gitconfig"
+
 exe = ""
 candidates = Array( _
   sh.ExpandEnvironmentStrings("%LOCALAPPDATA%") & "\Microsoft\WindowsApps\claude-desktop.exe", _
@@ -283,6 +295,46 @@ function Move-LegacyCodeConfig([string]$dir) {
     Write-Ok "Configurazione Claude Code spostata da $LegacyCodeDirName\ a $CodeDirName\ (l'app svuota $LegacyCodeDirName\ a ogni avvio)."
 }
 
+function Get-MarkerValue($marker, [string]$key) {
+    if (-not $marker) { return $null }
+    $p = $marker.PSObject.Properties[$key]
+    if ($p) { return $p.Value } else { return $null }
+}
+
+# Configurazione gh del profilo: indica solo quale account usare. Il token resta dove gh
+# l'ha salvato (Gestore credenziali di Windows), quindi l'account deve aver già fatto
+# "gh auth login" almeno una volta su questo PC. Non sovrascrive un hosts.yml non nostro.
+function Set-ProfileGitHub([string]$dir, [string]$user) {
+    if ($user -notmatch '^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$') { throw "Nome utente GitHub non valido: '$user'." }
+    $ghDir = Join-Path $dir 'gh'
+    $hosts = Join-Path $ghDir 'hosts.yml'
+    $mark = "# $ToolId"
+    if ((Test-Path -LiteralPath $hosts) -and -not ((Get-Content -LiteralPath $hosts -TotalCount 1) -eq $mark)) {
+        Write-Warn "$hosts esiste e non è stato creato da questo strumento: non lo modifico."
+        return
+    }
+    New-Item -ItemType Directory -Force -Path $ghDir | Out-Null
+    $yml = @($mark, 'github.com:', '    users:', "        ${user}:", '    git_protocol: https', "    user: $user") -join "`n"
+    [IO.File]::WriteAllText($hosts, $yml + "`n", [Text.UTF8Encoding]::new($false))
+    # Controllo di sola lettura: guardo solo se nel Gestore credenziali esiste la voce
+    # di gh per quell'account. Non lancio gh, che potrebbe creare o copiare voci.
+    $known = @(cmdkey /list 2>$null | Where-Object { $_ -match "target=gh:github\.com:$([regex]::Escape($user))\s*$" }).Count -gt 0
+    if ($known) { Write-Ok "GitHub del profilo: $user (credenziali di gh già presenti su questo PC)." }
+    else { Write-Warn "GitHub del profilo: $user non ha ancora fatto l'accesso a gh su questo PC. Esegui una volta: `$env:GH_CONFIG_DIR='$ghDir'; gh auth login --hostname github.com --web" }
+}
+
+# Identità dei commit del profilo: un gitconfig che include quello globale dell'utente
+# (credenziali, alias, impostazioni) e cambia solo [user].
+function Set-ProfileGitConfig([string]$dir, [string]$name, [string]$email) {
+    if ($name -match '[\r\n"\\\[\]]' -or $email -notmatch '^[^\s@"<>\[\]\\]+@[^\s@"<>\[\]\\]+$') { throw 'Nome o email per git non validi.' }
+    $global = (Join-Path $env:USERPROFILE '.gitconfig') -replace '\\', '/'
+    $lines = @("# ${ToolId}: configurazione git del profilo", '[include]', "`tpath = $global", '[user]')
+    if ($name) { $lines += "`tname = $name" }
+    if ($email) { $lines += "`temail = $email" }
+    [IO.File]::WriteAllText((Join-Path $dir 'gitconfig'), ($lines -join "`n") + "`n", [Text.UTF8Encoding]::new($false))
+    Write-Ok "Commit del profilo firmati come: $name <$email>"
+}
+
 function Install-Profile([string]$n, $marker) {
     $dir = Get-ProfileDir $n
     $display = if ($DisplayName) { $DisplayName } elseif ($marker -and $marker.displayName) { $marker.displayName } else { $n }
@@ -299,6 +351,15 @@ function Install-Profile([string]$n, $marker) {
         $codeDir = Join-Path $dir $CodeDirName
         New-Item -ItemType Directory -Force -Path $codeDir | Out-Null
         $null = Set-ClaudeMdExclude $codeDir
+    }
+
+    $ghUser   = if ($GitHubUser) { $GitHubUser } else { Get-MarkerValue $marker 'githubUser' }
+    $gitName  = if ($GitName) { $GitName } else { Get-MarkerValue $marker 'gitName' }
+    $gitEmail = if ($GitEmail) { $GitEmail } else { Get-MarkerValue $marker 'gitEmail' }
+    if ($ghUser) { Set-ProfileGitHub $dir $ghUser }
+    if ($gitName -or $gitEmail) {
+        if (-not ($gitName -and $gitEmail)) { throw 'Per l''identità dei commit servono sia -GitName sia -GitEmail.' }
+        Set-ProfileGitConfig $dir $gitName $gitEmail
     }
 
     $launcher = Install-Launcher
@@ -321,6 +382,9 @@ function Install-Profile([string]$n, $marker) {
         desktopShortcut  = $desktop
         startWithWindows = $startup
         sharedClaudeCode = $shared
+        githubUser       = $ghUser
+        gitName          = $gitName
+        gitEmail         = $gitEmail
         shortcuts        = $links
     })
     return [pscustomobject]@{ Dir = $dir; Links = $links; Display = $display; Shared = $shared }

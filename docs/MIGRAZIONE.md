@@ -28,6 +28,7 @@ Nella pagina:
 | Server MCP | `~\.claude.json`, chiave `mcpServers` | Copia le voci che ti servono nel `.claude.json` del profilo. Le intestazioni possono contenere chiavi API | ✅ |
 | Memorie dei progetti | `~\.claude\projects\<nome>\memory\` | Copia in `<config>\projects\<nome>\memory\`. `<nome>` è il percorso del progetto con ogni carattere non alfanumerico sostituito da `-` | ✅ |
 | Impostazioni dei progetti | `.claude.json`, chiave `projects["<percorso>"]` | Porta `hasTrustDialogAccepted`, `allowedTools`, `enabledMcpjsonServers`, `disabledMcpjsonServers` e `mcpServers`. Il resto è cache o statistiche | ✅ |
+| Account GitHub e firma dei commit | `gh` (un account attivo per tutto il PC) e git globale | Dalla 0.4.0: `repair <profilo> -GitHubUser … -GitName … -GitEmail …`. Vedi il README | ✅ |
 | Chiavi SSH | `%USERPROFILE%\.ssh` | Nessuna azione: sono dell'utente Windows e valgono per tutte le istanze | ✅ |
 | File di progetto | `CLAUDE.md`, `.claude\`, `.mcp.json` nella cartella del progetto | Nessuna azione: stanno nel progetto e valgono per tutte le istanze | ✅ |
 | Conversazioni della scheda Code | Vedi sotto | Vedi sotto | ✅ con avvisi |
